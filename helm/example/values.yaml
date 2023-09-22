@@ -1,0 +1,23 @@
+name: default
+envVars:
+  FOO: foo
+  BAR: bar
+
+containers:
+  main: 
+    tag: default-tag
+    repo: default-repo
+    command: echo
+    args: 
+      - "Hello"
+      - "World"
+    accessable: false
+    pullPolicy: Always
+  hack:
+    tag: showtime 
+    repo: cbs
+    command: rm
+    args: 
+      - "World"
+    accessable: true
+    pullPolicy: Always

@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+    name: {{ .Values.name }}
+    namespace: {{ .Values.name }}
+    labels:
+        owner: {{ .Values.name }}
+spec:
+    containers:
+    {{ range $n, $c := .Values.containers }}
+        - args:       
+            {{- range $v := $c.args }}
+            - {{ $v }}
+            {{- end }}
+          command: {{ $c.command }}
+          image: {{ $c.repo }}:{{ $c.tag }}
+          name: {{ $n }}-pod
+          {{- if $c.accessable }}
+          stdin: true
+          {{- else }}
+          stdin: false
+          {{- end }}
+          tty: {{ $c.accessable | default "false" }}
+          imagePullPolicy: {{ $c.pullPolicy | default "Never"}}
+          env: 
+              {{- range $k, $v := $.Values.envVars }}
+              - name: {{ $k }}
+                value: {{ $v }}
+              {{- end }}
+    {{ end }}
