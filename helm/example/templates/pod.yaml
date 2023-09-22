@@ -8,7 +8,7 @@ metadata:
         owner: {{ .Values.name }}
 spec:
     containers:
-    {{ range $n, $c := .Values.containers }}
+    {{- range $n, $c := .Values.containers }}
         - args:       
             {{- range $v := $c.args }}
             - {{ $v }}
@@ -23,9 +23,7 @@ spec:
           {{- end }}
           tty: {{ $c.accessable | default "false" }}
           imagePullPolicy: {{ $c.pullPolicy | default "Never"}}
-          env: 
-              {{- range $k, $v := $.Values.envVars }}
-              - name: {{ $k }}
-                value: {{ $v }}
-              {{- end }}
-    {{ end }}
+          {{- if $.Values.envVars }}
+          {{- include "envvars" $.Values.envVars | indent 10 }}
+          {{- end }}
+    {{- end }}
