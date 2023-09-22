@@ -1,6 +1,6 @@
 FROM alpine:3.18.3
 
-RUN apk update
+RUN apk update && apk add neofetch
 
 RUN wget https://get.helm.sh/helm-v3.5.4-linux-amd64.tar.gz && \
     tar -zxvf helm-v3.5.4-linux-amd64.tar.gz && \
