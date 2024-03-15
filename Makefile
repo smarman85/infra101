@@ -28,7 +28,7 @@ helm-docker: helm-build-docker helm-run-docker helm-connect-docker
 
 
 layer-start-build:
-	podman build -t start ./Docker/layers/start/
+	podman build -t start --build-arg password='D@ntUs3!!' ./Docker/layers/start/
 
 layer-start-run:
 	podman run -dith start -p 8080:8080 --name start start /go/bin/app

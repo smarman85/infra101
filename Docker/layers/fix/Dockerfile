@@ -2,6 +2,8 @@ FROM golang:1.20 AS base
 
 WORKDIR /go/src/app
 
+ARG password=defaultValue
+
 COPY go.mod go.sum vendor ./
 
 RUN go mod download
