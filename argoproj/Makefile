@@ -1,3 +1,7 @@
+DATE := $(shell date +%FT%T%Z)
+# argocd admin password set to: admin
+# below is the escaped version of the password coming from: htpasswd -bnBC 10 "" admin | tr -d ':\n' | sed 's/$2y/$2a/'
+ADMIN_PASSWORD := $$2a$$10$$fHMjO5gJhVg1fSU/lUwubO96tr4OiaKp9TdHTAjYm4z8eIfLNJOgK # admin
 build-cluster:
 	kind create cluster --config ./config/kind-cluster.yaml
 
@@ -11,10 +15,34 @@ create-namespaces:
 
 argocd:
 	kubectl apply -f ./charts/infra/argocd/install.yaml -n argocd
+	kubectl patch secret argocd-secret -n argocd -p '{"stringData": {"admin.password": "$(ADMIN_PASSWORD)", "admin.passwordMtime": "$(DATE)"}}'
+
+argocd-patch-secret:
+	kubectl patch secret argocd-secret -n argocd -p '{"stringData": {"admin.password": "$(ADMIN_PASSWORD)", "admin.passwordMtime": "$(DATE)"}}'
+
+argocd-ui:
+	kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=30s
+	open /Applications/Google\ Chrome.app/ "https://0.0.0.0:30080/applications"
 
 argo-workflows:
 	kubectl apply -f ./charts/infra/argo-workflows/install.yaml -n argo
+	# bypass ui for login 
+	kubectl patch deployment argo-server --namespace argo --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args", "value": [ "server", "--auth-mode=server" ]}]'
 
-argoworkflows:
+argo-workflows-ui:
+	open /Applications/Google\ Chrome.app/ "https://0.0.0.0:32746/workflows/undefined?&limit=50"
 
-init: build-cluster create-namespaces argocd
+argo-events:
+	kubectl apply -f ./charts/infra/argo-events/install.yaml -n argo-events
+	kubectl apply -n argo-events -f ./charts/infra/argo-events/native.yaml
+	kubectl apply -n argo-events -f ./charts/infra/argo-events/sensor-rbac.yaml
+	kubectl apply -n argo-events -f ./charts/infra/argo-events/workflow-rbac.yaml
+
+demo-webhook:
+	kubectl apply -n argo-events -f ./charts/infra/demo/webhook/install.yaml
+	kubectl -n argo-events port-forward $(kubectl -n argo-events get pod -l eventsource-name=webhook -o name) 12000:12000 &
+
+demo-webhook-run:
+	curl -d '{"peanut-butter":"jelly time"}' -H "Content-Type: application/json" -X POST http://localhost:12000/example
+
+init: build-cluster create-namespaces argocd argo-workflows argo-events argocd-ui argo-workflows-ui demo-webhook
