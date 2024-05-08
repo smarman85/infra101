@@ -2,6 +2,7 @@ DATE := $(shell date +%FT%T%Z)
 # argocd admin password set to: admin
 # below is the escaped version of the password coming from: htpasswd -bnBC 10 "" admin | tr -d ':\n' | sed 's/$2y/$2a/'
 ADMIN_PASSWORD := $$2a$$10$$fHMjO5gJhVg1fSU/lUwubO96tr4OiaKp9TdHTAjYm4z8eIfLNJOgK # admin
+WEBHOOK_POD := $(shell kubectl -n argo-events get pod -l eventsource-name=webhook -o name)
 build-cluster:
 	kind create cluster --config ./config/kind-cluster.yaml
 
@@ -15,13 +16,13 @@ create-namespaces:
 
 argocd:
 	kubectl apply -f ./charts/infra/argocd/install.yaml -n argocd
-	kubectl patch secret argocd-secret -n argocd -p '{"stringData": {"admin.password": "$(ADMIN_PASSWORD)", "admin.passwordMtime": "$(DATE)"}}'
+	# kubectl patch secret argocd-secret -n argocd -p '{"stringData": {"admin.password": "$(ADMIN_PASSWORD)", "admin.passwordMtime": "$(DATE)"}}'
 
 argocd-patch-secret:
 	kubectl patch secret argocd-secret -n argocd -p '{"stringData": {"admin.password": "$(ADMIN_PASSWORD)", "admin.passwordMtime": "$(DATE)"}}'
 
 argocd-ui:
-	kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=30s
+	kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=30s --timeout=60s
 	open /Applications/Google\ Chrome.app/ "https://0.0.0.0:30080/applications"
 
 argo-workflows:
@@ -39,10 +40,11 @@ argo-events:
 	kubectl apply -n argo-events -f ./charts/infra/argo-events/workflow-rbac.yaml
 
 demo-webhook:
-	kubectl apply -n argo-events -f ./charts/infra/demo/webhook/install.yaml
-	kubectl -n argo-events port-forward $(kubectl -n argo-events get pod -l eventsource-name=webhook -o name) 12000:12000 &
+	# kubectl apply -n argo-events -f ./charts/infra/demo/webhook/install.yaml
+	kubectl apply -f ./demo/argoCDApps/webhook.yaml
+	kubectl -n argo-events port-forward $(WEBHOOK_POD) 12000:12000 &
 
 demo-webhook-run:
 	curl -d '{"peanut-butter":"jelly time"}' -H "Content-Type: application/json" -X POST http://localhost:12000/example
 
-init: build-cluster create-namespaces argocd argo-workflows argo-events argocd-ui argo-workflows-ui demo-webhook
+init: build-cluster create-namespaces argocd argocd-patch-secret argo-workflows argo-events argocd-ui argo-workflows-ui demo-webhook
