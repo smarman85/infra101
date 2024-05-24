@@ -39,12 +39,20 @@ argo-events:
 	kubectl apply -n argo-events -f ./charts/infra/argo-events/sensor-rbac.yaml
 	kubectl apply -n argo-events -f ./charts/infra/argo-events/workflow-rbac.yaml
 
+demo-workflow:
+	kubectl apply -n argo -f ./demo/workflow/install.yaml
+
+demo-dag:
+	kubectl apply -n argo -f ./demo/dag/install.yaml
+
+demo-cron:
+	kubectl apply -n argo -f ./demo/cron/install.yaml
+
 demo-webhook:
-	# kubectl apply -n argo-events -f ./charts/infra/demo/webhook/install.yaml
 	kubectl apply -f ./demo/argoCDApps/webhook.yaml
 	kubectl -n argo-events port-forward $(WEBHOOK_POD) 12000:12000 &
 
 demo-webhook-run:
 	curl -d '{"peanut-butter":"jelly time"}' -H "Content-Type: application/json" -X POST http://localhost:12000/example
 
-init: build-cluster create-namespaces argocd argocd-patch-secret argo-workflows argo-events argocd-ui argo-workflows-ui demo-webhook
+init: build-cluster create-namespaces argocd argocd-patch-secret argo-workflows argo-events argocd-ui argo-workflows-ui 
