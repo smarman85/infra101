@@ -55,4 +55,4 @@ demo-webhook:
 demo-webhook-run:
 	curl -d '{"peanut-butter":"jelly time"}' -H "Content-Type: application/json" -X POST http://localhost:12000/example
 
-init: build-cluster create-namespaces argocd argocd-patch-secret argo-workflows argo-events argocd-ui argo-workflows-ui 
+init: build-cluster create-namespaces argocd argocd-patch-secret argo-workflows argo-events 
