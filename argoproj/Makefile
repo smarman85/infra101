@@ -31,6 +31,7 @@ argo-workflows:
 	kubectl patch deployment argo-server --namespace argo --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args", "value": [ "server", "--auth-mode=server" ]}]'
 
 argo-workflows-ui:
+	kubectl wait --for=condition=available deployment/argo-server -n argo --timeout=30s --timeout=60s
 	open /Applications/Google\ Chrome.app/ "https://0.0.0.0:32746/workflows/undefined?&limit=50"
 
 argo-events:
