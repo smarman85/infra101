@@ -1,0 +1,14 @@
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: go-go-k8s-pod
+  labels:
+    needone: nope
+spec:
+  containers:
+    - name: dev
+      image: golang:1.20-bullseye
+      tty: true
+      stdin: true
+      command: ["/bin/bash"]
